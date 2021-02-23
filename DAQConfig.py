@@ -61,8 +61,7 @@ def xmlOf(name):
 def configExists(configDir, configName):
     if not os.path.exists(configDir): return False
     configFile = xmlOf(os.path.join(configDir, configName))
-    if not os.path.exists(configFile): return False
-    return True
+    return bool(os.path.exists(configFile))
 
 def checkForValidConfig(configDir, configName):
     try:
@@ -205,7 +204,7 @@ class DAQConfig(object):
         if len(configs) < 1: raise noRunConfigFound("No runconfig field found!")
 
         # Parse the comprehensive lookup table "default-dom-geometry.xml"
-        if DAQConfig.DeployedDOMs == None:
+        if DAQConfig.DeployedDOMs is None:
             DAQConfig.DeployedDOMs = DefaultDOMGeometry(configDir)
 
         self.domlist = []
@@ -315,9 +314,7 @@ class DAQConfig(object):
         """
         Indicate whether DOM mainboard id domid is in the current configuration
         """
-        for d in self.domlist:
-            if d == domid: return True
-        return False
+        return domid in self.domlist
 
     def getIDbyName(self, name):
         """

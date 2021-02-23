@@ -23,10 +23,7 @@ class TinyClient(object):
         self.__order = None
 
     def __str__(self):
-        if self.__mbeanPort == 0:
-            mStr = ''
-        else:
-            mStr = ' M#%d' % self.__mbeanPort
+        mStr = '' if self.__mbeanPort == 0 else ' M#%d' % self.__mbeanPort
         return 'ID#%d %s#%d at %s:%d%s' % \
             (self.id, self.name, self.num, self.__host, self.__port, mStr)
 

@@ -26,9 +26,7 @@ else:
 
 def hasNonZero(l):
     if not l: raise RuntimeError("List is empty!")
-    for x in l:
-        if x != 0: return True
-    return False
+    return any(x != 0 for x in l)
 
 class ThreadableProcess:
     """
@@ -168,34 +166,22 @@ class DOMCounter:
         return self.domDict[dom].version
     
     def doneDomCount(self):
-        n = 0
-        for d in self.domDict:
-            if self.domDict[d].done: n += 1
-        return n
+        return sum(bool(self.domDict[d].done) for d in self.domDict)
 
     def notDoneDoms(self):
-        l = []
-        for d in self.domDict:
-            if not self.domDict[d].done: l.append(self.domDict[d])        
-        return l
+        return [self.domDict[d] for d in self.domDict if not self.domDict[d].done]
     
     def failedDoms(self):
-        failed = []
-        for d in self.domDict:
-            if self.domDict[d].failed: failed.append(self.domDict[d])
-        return failed
+        return [self.domDict[d] for d in self.domDict if self.domDict[d].failed]
 
     def warningDoms(self):
-        warns = []
-        for d in self.domDict:
-            if self.domDict[d].hasWarning: warns.append(self.domDict[d])
-        return warns
+        return [self.domDict[d] for d in self.domDict if self.domDict[d].hasWarning]
     
     def versionCounts(self):
         versions = {}
         for d in self.domDict.keys():
             thisVersion = self.getVersion(d)
-            if thisVersion == None: continue
+            if thisVersion is None: continue
             if not versions.has_key(thisVersion):
                 versions[thisVersion] = 1
             else:

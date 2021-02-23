@@ -14,10 +14,7 @@ class MockMBeanClient(object):
         return self.__mbeanDict[bean][fld]
 
     def getAttributes(self, bean, fldList):
-        attrs = {}
-        for f in fldList:
-            attrs[f] = self.__mbeanDict[bean][f]
-        return attrs
+        return {f: self.__mbeanDict[bean][f] for f in fldList}
 
     def listGetters(self, bean):
         if self.__mbeanDict is None:

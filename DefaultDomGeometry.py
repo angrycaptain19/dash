@@ -261,7 +261,7 @@ class DefaultDomGeometry(object):
         keys = self.__stringToDom.keys()
 
         for s in oldDomGeom.__stringToDom:
-            if not s in keys:
+            if s not in keys:
                 self.__stringToDom[s] = oldDomGeom.__stringToDom[s]
 
     def rewrite(self, rewriteOldIcetop=True):
@@ -276,18 +276,16 @@ class DefaultDomGeometry(object):
             baseNum = s % 1000
             domList = self.__stringToDom[s][:]
 
-            idx = 0
-            while idx < len(domList):
+            for idx in range(len(domList)):
                 dom = domList[idx]
-                if (baseNum <= 80 and dom.pos <= 60) or \
-                        (baseNum > 200 and dom.pos > 60) or \
-                        (not rewriteOldIcetop and baseNum > 80 and \
-                             dom.pos > 60):
-                    pass
-                else:
+                if (
+                    (baseNum > 80 or dom.pos > 60)
+                    and (baseNum <= 200 or dom.pos <= 60)
+                    and (rewriteOldIcetop or baseNum <= 80 or dom.pos <= 60)
+                ):
                     if dom.pos <= 60:
                         it = baseNum
-                    elif rewriteOldIcetop and baseNum > 80 and baseNum < 200:
+                    elif baseNum > 80 and baseNum < 200:
                         it = baseNum % 10 + 200
                     else:
                         try:
@@ -307,8 +305,6 @@ class DefaultDomGeometry(object):
 
                         self.addString(it, errorOnMulti=False)
                         self.addDom(it, dom)
-
-                idx += 1
 
 class XMLParser(object):
     def getChildNode(cls, node, childName, hasAttr=False, hasKids=True):
@@ -568,11 +564,7 @@ class NicknameReader(object):
 
             geom.addString(strNum, errorOnMulti=False)
 
-            if newGeom:
-                oldDom = None
-            else:
-                oldDom = geom.getDom(strNum, pos)
-
+            oldDom = None if newGeom else geom.getDom(strNum, pos)
             if oldDom is not None:
                 oldDom.setDesc(desc)
             else:

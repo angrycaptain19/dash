@@ -17,11 +17,8 @@ class TestDAQLogClient(unittest.TestCase):
                               'Expected "%s", not "%s"' % (msgList[i], msg))
 
     def readLog(self, logPath):
-        lines = []
-        fd = open(logPath, 'r')
-        for line in fd:
-            lines.append(line.rstrip())
-        fd.close()
+        with open(logPath, 'r') as fd:
+            lines = [line.rstrip() for line in fd]
         return lines
 
     def setUp(self):

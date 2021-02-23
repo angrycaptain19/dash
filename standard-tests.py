@@ -182,10 +182,7 @@ class Deploy(object):
 
     def getUniqueClusterConfigs(self, runList):
         "Return a list of the unique elements"
-        ccDict = {}
-        for data in runList:
-            ccDict[data.clusterConfig()] = 1
-
+        ccDict = {data.clusterConfig(): 1 for data in runList}
         uniqList = ccDict.keys()
         uniqList.sort()
 

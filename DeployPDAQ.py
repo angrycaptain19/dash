@@ -33,9 +33,7 @@ else:
 
 def getUniqueHostNames(config):
     # There's probably a much better way to do this
-    retHash = {}
-    for node in config.nodes:
-        retHash[str(node.hostName)] = 1
+    retHash = {str(node.hostName): 1 for node in config.nodes}
     return retHash.keys()
 
 def getHubType(compID):

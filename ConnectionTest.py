@@ -27,9 +27,10 @@ class Node(object):
         comp.link(self, ioType, Node.IS_INPUT)
 
     def getConnections(self):
-        connectors = []
-        for k in self.outLinks.keys():
-            connectors.append(Connector(k, False, self.getNextPort()))
+        connectors = [
+            Connector(k, False, self.getNextPort()) for k in self.outLinks.keys()
+        ]
+
         for k in self.inLinks.keys():
             connectors.append(Connector(k, True, self.getNextPort()))
         return connectors
@@ -91,11 +92,7 @@ class Node(object):
         return port
 
     def link(self, comp, ioType, isOutput):
-        if isOutput:
-            links = self.outLinks
-        else:
-            links = self.inLinks
-
+        links = self.outLinks if isOutput else self.inLinks
         if not links.has_key(ioType):
             links[ioType] = []
 
@@ -246,7 +243,7 @@ class ConnectionTest(unittest.TestCase):
         shList = []
         ihList = []
 
-        for i in range(0, 4):
+        for i in range(4):
             shList.append(Node('StringHub', i + 10))
             ihList.append(Node('IcetopHub', i + 20))
 

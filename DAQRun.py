@@ -368,15 +368,13 @@ class DAQRun(object):
             self.__logMode = DAQRun.LOG_TO_LIVE
         else:
             self.__logMode = DAQRun.LOG_TO_FILE
- 
-        if self.__logMode == DAQRun.LOG_TO_FILE or \
-                self.__logMode == DAQRun.LOG_TO_BOTH:
+
+        if self.__logMode in [DAQRun.LOG_TO_FILE, DAQRun.LOG_TO_BOTH]:
             self.__appender.setLogAppender(self.createInitialAppender())
         else:
             self.__appender.setLogAppender(None)
 
-        if self.__logMode == DAQRun.LOG_TO_LIVE or \
-                self.__logMode == DAQRun.LOG_TO_BOTH:
+        if self.__logMode in [DAQRun.LOG_TO_LIVE, DAQRun.LOG_TO_BOTH]:
             appender = LiveSocketAppender('localhost', DAQPort.I3LIVE,
                                           priority=DAQRun.LOGPRIO)
             self.__appender.setLiveAppender(appender)
@@ -512,10 +510,7 @@ class DAQRun(object):
         """
         Get the list of missing components
         """
-        missing = []
-        for t in target:
-            if not t in reference: missing.append(str(t))
-        return missing
+        return [str(t) for t in target if t not in reference]
     findMissing = staticmethod(findMissing)
 
     def waitForRequiredComponents(self, cncrpc, requiredList, timeOutSecs):
@@ -564,9 +559,7 @@ class DAQRun(object):
         "Get and set global configuration"
         self.configuration = DAQConfig.DAQConfig(configName, configDir)
         self.log.info("Loaded global configuration \"%s\"" % configName)
-        requiredComps = []
-        for comp in self.configuration.components():
-            requiredComps.append(comp)
+        requiredComps = [comp for comp in self.configuration.components()]
         for kind in self.configuration.kinds():
             self.log.info("Configuration includes detector %s" % kind)
         for comp in requiredComps:
@@ -617,7 +610,7 @@ class DAQRun(object):
         "Sets up loggers for remote components (other than CnCServer)"
         self.log.info("Setting up logging for %d components" %
                       len(self.setCompIDs))
-        for ic in range(0, len(self.setCompIDs)):
+        for ic in range(len(self.setCompIDs)):
             compID = self.setCompIDs[ic]
             self.logPortOf[compID] = DAQPort.RUNCOMP_BASE + ic
             logFile  = "%s/%s-%d.log" % \
@@ -652,9 +645,9 @@ class DAQRun(object):
 
     def setup_run_logging(self, cncrpc, logDir, runNum, configName):
         "Set up logger for CnCServer and required components"
-        if (self.__logMode & DAQRun.LOG_TO_FILE) == DAQRun.LOG_TO_FILE and \
-                not (self.__logMode == DAQRun.LOG_TO_FILE and \
-                         self.__liveInfo is not None):
+        if (self.__logMode & DAQRun.LOG_TO_FILE) == DAQRun.LOG_TO_FILE and (
+            self.__logMode != DAQRun.LOG_TO_FILE or self.__liveInfo is None
+        ):
             self.__appender.setLogAppender(self.createFileAppender())
 
         self.log.error(("Version info: %(filename)s %(revision)s %(date)s" +
@@ -941,7 +934,7 @@ class DAQRun(object):
         return True
 
     def saveAndResetRunStats(self):
-        if self.prevRunStats == None: self.prevRunStats = RunStats()
+        if self.prevRunStats is None: self.prevRunStats = RunStats()
         self.prevRunStats.clone(self.runStats)
         self.runStats.clearAll()
 
@@ -949,14 +942,8 @@ class DAQRun(object):
         try:
             self.log.error("Doing complete rip-down and restart of pDAQ " +
                            "(everything but DAQRun)")
-            if self.__isLogToFile():
-                logPort = DAQPort.CATCHALL
-            else:
-                logPort = None
-            if self.__isLogToLive():
-                livePort = DAQPort.I3LIVE
-            else:
-                livePort = None
+            logPort = DAQPort.CATCHALL if self.__isLogToFile() else None
+            livePort = DAQPort.I3LIVE if self.__isLogToLive() else None
             cyclePDAQ(self.dashDir, self.clusterConfig, self.configDir,
                       self.logDir, self.spadeDir, self.copyDir,
                       logPort, livePort, checkExists=checkExists,
@@ -978,17 +965,30 @@ class DAQRun(object):
             self.__appender.setLogAppender(LogSocketAppender('localhost',
                                                              DAQPort.CATCHALL))
 
-        if cnc is not None:
-            self.cnc = cnc
-        else:
-            self.cnc = RPCClient("localhost", DAQPort.CNCSERVER)
-
+        self.cnc = RPCClient("localhost", DAQPort.CNCSERVER) if cnc is None else cnc
         logDirCreated = False
         forceRestart  = True
 
         self.running = True
         while self.running:
-            if self.runState == "STARTING":
+            if (
+                self.runState != "STARTING"
+                and self.runState not in ["STOPPING", "RECOVERING"]
+                and self.runState == "RUNNING"
+                and not self.check_all()
+            ):
+                self.log.error("Caught error in system, going to ERROR state...")
+                self.runState = "ERROR"
+            elif (
+                self.runState != "STARTING"
+                and self.runState not in ["STOPPING", "RECOVERING"]
+                and self.runState == "RUNNING"
+                and self.check_all()
+                or self.runState
+                not in ["STARTING", "STOPPING", "RECOVERING", "RUNNING"]
+            ):
+                time.sleep(0.25)
+            elif self.runState == "STARTING":
                 self.runStats.clear()
                 logDirCreated = False
                 try:
@@ -1054,7 +1054,7 @@ class DAQRun(object):
                     self.log.error("Failed to start run: %s" % exc_string())
                     self.runState = "ERROR"
 
-            elif self.runState == "STOPPING" or self.runState == "RECOVERING":
+            else:
                 hadError = False
                 if self.runState == "RECOVERING":
                     if self.runStats.runNum is None:
@@ -1128,15 +1128,6 @@ class DAQRun(object):
 
                 self.saveAndResetRunStats()
                 self.runState = "STOPPED"
-
-            elif self.runState == "RUNNING":
-                if not self.check_all():
-                    self.log.error("Caught error in system, going to ERROR state...")
-                    self.runState = "ERROR"
-                else:
-                    time.sleep(0.25)
-            else:
-                time.sleep(0.25)
 
         self.log.close()
         if self.__isLogToFile():
@@ -1250,8 +1241,8 @@ class DAQRun(object):
             if x == n:
                 yield n
                 return
-            if x < 0: yield x; x = -x
-            else:     yield x; x = -(x+1)
+            if x < 0: yield x
+            x = -x if x < 0 else -(x+1)
         raise RunawayGeneratorException("x=%s n=%s", str(x), str(n))
     seqMap = staticmethod(seqMap)
 

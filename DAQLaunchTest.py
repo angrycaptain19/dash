@@ -48,27 +48,19 @@ class DAQLaunchTest(unittest.TestCase):
 
         logLevel = 'DEBUG'
 
-        for compName in componentDB:
-            if compName[-3:] == 'Hub':
-                compId = 17
-            else:
-                compId = 0
+        cfgName = 'mockCfg'
 
+        for compName in componentDB:
+            compId = 17 if compName[-3:] == 'Hub' else 0
             for host in MockNode.LIST:
                 node = MockNode(host)
                 node.addComp(compName, compId, logLevel)
-
-                cfgName = 'mockCfg'
 
                 config = MockClusterConfig(cfgName)
                 config.addNode(node)
 
                 for isLive in (True, False):
-                    if isLive:
-                        livePort = DAQPort.I3LIVE
-                    else:
-                        livePort = None
-
+                    livePort = DAQPort.I3LIVE if isLive else None
                     for eventCheck in (True, False):
                         parallel = MockParallelShell()
 
@@ -85,22 +77,18 @@ class DAQLaunchTest(unittest.TestCase):
                         parallel.check()
 
     def testKillJava(self):
+        dryRun = False
+        verbose = False
+
+        logLevel = 'DEBUG'
+
+        cfgName = 'mockCfg'
+
         for compName in componentDB:
-            if compName[-3:] == 'Hub':
-                compId = 17
-            else:
-                compId = 0
-
-            dryRun = False
-            verbose = False
-
-            logLevel = 'DEBUG'
-
+            compId = 17 if compName[-3:] == 'Hub' else 0
             for host in MockNode.LIST:
                 node = MockNode(host)
                 node.addComp(compName, compId, logLevel)
-
-                cfgName = 'mockCfg'
 
                 config = MockClusterConfig(cfgName)
                 config.addNode(node)
@@ -132,6 +120,10 @@ class DAQLaunchTest(unittest.TestCase):
         compId = 0
         logLevel = 'DEBUG'
 
+        cfgName = 'mockCfg'
+
+        dryRun = False
+
         # if there are N targets, range is 2^N
         for targets in range(8):
             doCnC = (targets & 1) == 1
@@ -142,17 +134,11 @@ class DAQLaunchTest(unittest.TestCase):
                 node = MockNode(host)
                 node.addComp(compName, compId, logLevel)
 
-                cfgName = 'mockCfg'
-
                 config = MockClusterConfig(cfgName)
                 config.addNode(node)
 
                 for isLive in (True, False):
-                    if isLive:
-                        livePort = DAQPort.I3LIVE
-                    else:
-                        livePort = None
-
+                    livePort = DAQPort.I3LIVE if isLive else None
                     for evtChk in (True, False):
                         parallel = MockParallelShell()
 
@@ -163,8 +149,6 @@ class DAQLaunchTest(unittest.TestCase):
                         parallel.addExpectedJava(compName, compId, configDir,
                                                  logPort, livePort, logLevel,
                                                  verbose, evtChk, host)
-
-                        dryRun = False
 
                         doLaunch(doLive, doDAQRun, doCnC, dryRun, verbose,
                                  quiet, config, dashDir, configDir, logDir,
@@ -184,6 +168,8 @@ class DAQLaunchTest(unittest.TestCase):
         compId = 0
         logLevel = 'DEBUG'
 
+        cfgName = 'mockCfg'
+
         # if there are N targets, range is 2^N
         for targets in range(8):
             doCnC = (targets & 1) == 1
@@ -193,8 +179,6 @@ class DAQLaunchTest(unittest.TestCase):
             for host in MockNode.LIST:
                 node = MockNode(host)
                 node.addComp(compName, compId, logLevel)
-
-                cfgName = 'mockCfg'
 
                 config = MockClusterConfig(cfgName)
                 config.addNode(node)
@@ -233,21 +217,17 @@ class DAQLaunchTest(unittest.TestCase):
         doDAQRun = False
         doLive = False
 
+        cfgName = 'mockCfg'
+
         for host in MockNode.LIST:
             node = MockNode(host)
             node.addComp(compName, compId, logLevel)
-
-            cfgName = 'mockCfg'
 
             config = MockClusterConfig(cfgName)
             config.addNode(node)
 
             for isLive in (True, False):
-                if isLive:
-                    livePort = DAQPort.I3LIVE
-                else:
-                    livePort = None
-
+                livePort = DAQPort.I3LIVE if isLive else None
                 for eventCheck in (True, False):
                     parallel = MockParallelShell()
 

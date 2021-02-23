@@ -572,14 +572,14 @@ class Popen(object):
             """Construct and return tupel with IO objects:
             p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
             """
-            if stdin == None and stdout == None and stderr == None:
+            if stdin == None and stdout is None and stderr == None:
                 return (None, None, None, None, None, None)
 
             p2cread, p2cwrite = None, None
             c2pread, c2pwrite = None, None
             errread, errwrite = None, None
 
-            if stdin == None:
+            if stdin is None:
                 p2cread = GetStdHandle(STD_INPUT_HANDLE)
             elif stdin == PIPE:
                 p2cread, p2cwrite = CreatePipe(None, 0)
@@ -607,7 +607,7 @@ class Popen(object):
                 c2pwrite = msvcrt.get_osfhandle(stdout.fileno())
             c2pwrite = self._make_inheritable(c2pwrite)
 
-            if stderr == None:
+            if stderr is None:
                 errwrite = GetStdHandle(STD_ERROR_HANDLE)
             elif stderr == PIPE:
                 errread, errwrite = CreatePipe(None, 0)
@@ -733,17 +733,19 @@ class Popen(object):
         def poll(self):
             """Check if child process has terminated.  Returns returncode
             attribute."""
-            if self.returncode == None:
-                if WaitForSingleObject(self._handle, 0) == WAIT_OBJECT_0:
-                    self.returncode = GetExitCodeProcess(self._handle)
-                    _active.remove(self)
+            if (
+                self.returncode is None
+                and WaitForSingleObject(self._handle, 0) == WAIT_OBJECT_0
+            ):
+                self.returncode = GetExitCodeProcess(self._handle)
+                _active.remove(self)
             return self.returncode
 
 
         def wait(self):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
-            if self.returncode == None:
+            if self.returncode is None:
                 obj = WaitForSingleObject(self._handle, INFINITE)
                 self.returncode = GetExitCodeProcess(self._handle)
                 _active.remove(self)
@@ -819,7 +821,7 @@ class Popen(object):
             c2pread, c2pwrite = None, None
             errread, errwrite = None, None
 
-            if stdin == None:
+            if stdin is None:
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = os.pipe()
@@ -829,7 +831,7 @@ class Popen(object):
                 # Assuming file-like object
                 p2cread = stdin.fileno()
 
-            if stdout == None:
+            if stdout is None:
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = os.pipe()
@@ -839,7 +841,7 @@ class Popen(object):
                 # Assuming file-like object
                 c2pwrite = stdout.fileno()
 
-            if stderr == None:
+            if stderr is None:
                 pass
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
@@ -890,7 +892,7 @@ class Popen(object):
             if shell:
                 args = ["/bin/sh", "-c"] + args
 
-            if executable == None:
+            if executable is None:
                 executable = args[0]
 
             # For transferring possible exec failure from child to parent
@@ -939,7 +941,7 @@ class Popen(object):
                     if preexec_fn:
                         apply(preexec_fn)
 
-                    if env == None:
+                    if env is None:
                         os.execvp(executable, args)
                     else:
                         os.execvpe(executable, args, env)
@@ -990,7 +992,7 @@ class Popen(object):
         def poll(self):
             """Check if child process has terminated.  Returns returncode
             attribute."""
-            if self.returncode == None:
+            if self.returncode is None:
                 try:
                     pid, sts = os.waitpid(self.pid, os.WNOHANG)
                     if pid == self.pid:
@@ -1003,7 +1005,7 @@ class Popen(object):
         def wait(self):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
-            if self.returncode == None:
+            if self.returncode is None:
                 pid, sts = os.waitpid(self.pid, 0)
                 self._handle_exitstatus(sts)
             return self.returncode

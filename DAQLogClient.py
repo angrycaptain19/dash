@@ -135,10 +135,7 @@ class DAQLog(object):
         if self.__appender != self.__defaultAppender:
             self.__appender.close()
 
-        if appender is not None:
-            self.__appender = appender
-        else:
-            self.__appender = self.__defaultAppender
+        self.__appender = appender if appender is not None else self.__defaultAppender
 
     def setLevel(self, level):
         self.__level = level

@@ -222,10 +222,7 @@ class DAQMoni(object):
                 self.__threadList[c].start()
 
     def isActive(self):
-        for c in self.__threadList.keys():
-            if self.__threadList[c].done:
-                return True
-        return False
+        return any(self.__threadList[c].done for c in self.__threadList.keys())
 
 if __name__ == "__main__":
     usage = False

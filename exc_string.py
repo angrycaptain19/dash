@@ -68,7 +68,9 @@ def set_exc_string_encoding(encoding):
 
 ###############################################################################
 
-force_string_translate_map = " ????????\t ?? ??????????????????" + "".join([ chr(i) for i in range(32, 256) ])
+force_string_translate_map = " ????????\t ?? ??????????????????" + "".join(
+    chr(i) for i in range(32, 256)
+)
 
 def force_string(v):
     if isinstance(v, str):
@@ -93,8 +95,10 @@ def _reversed(r):
     return result
 
 def trace_string(tb = None):
-    return " <- ".join([ force_string("%s() (%s:%s)" % (m, path.split(f)[1], n))
-                         for f, n, m, u in _reversed(tb or extract_stack()[:-1]) ])
+    return " <- ".join(
+        force_string("%s() (%s:%s)" % (m, path.split(f)[1], n))
+        for f, n, m, u in _reversed(tb or extract_stack()[:-1])
+    )
 
 ###############################################################################
 
@@ -105,15 +109,8 @@ def exc_string():
         t, v, tb = exc_info()
         if t is None:
             return "no exception"
-        if v is not None:
-            v = force_string(v)
-        else:
-            v = force_string(t)
-        if hasattr(t, "__name__"):
-            t = t.__name__
-        else:
-            t = type(t).__name__
-
+        v = force_string(v) if v is not None else force_string(t)
+        t = t.__name__ if hasattr(t, "__name__") else type(t).__name__
         return "%s(\"%s\") in %s" % (t, v, trace_string(extract_tb(tb)))
 
     except:

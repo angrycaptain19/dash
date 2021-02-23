@@ -85,10 +85,7 @@ class LogSocketServer(object):
 
     def startServing(self):
         "Creates listener thread, prepares file for output, and returns"
-        if self.__logpath:
-            self.__outfile = open(self.__logpath, "w")
-        else:
-            self.__outfile = sys.stdout
+        self.__outfile = open(self.__logpath, "w") if self.__logpath else sys.stdout
         if os.name == "nt":
             self.__thread = threading.Thread(target=self.__win_listener)
         else:

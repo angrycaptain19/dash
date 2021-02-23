@@ -65,9 +65,9 @@ class PCmd(object):
         """ Return info about this command, the pid used and return code. """
         state_str = "%s%s%s%s" % (self.parallel and 'p' or '', self.dryRun and 'd' or '',
                                   self.verbose and 'v' or '', self.trace and 't' or '')
-        if self.subproc == None:  # Nothing started yet or dry run
+        if self.subproc is None:  # Nothing started yet or dry run
             return "'%s' [%s] Not started or dry run" % (self.cmd, state_str)
-        elif self.subproc.returncode == None:
+        elif self.subproc.returncode is None:
             return "'%s' [%s] running as pid %d" % (self.cmd, state_str, self.subproc.pid)
         elif self.subproc.returncode < 0:
             return "'%s' [%s] terminated (pid was %d) by signal %d" % (self.cmd, state_str, self.subproc.pid, -self.subproc.returncode)
@@ -163,7 +163,7 @@ class ParallelShell(object):
     def start(self):
         """ Start all unstarted commands. """
         for c in self.pcmds:
-            if c.subproc == None: c.start()
+            if c.subproc is None: c.start()
 
     def wait(self, monitorIval=None):
         """ Wait for all started commands to complete (or time out).  If the
@@ -201,10 +201,9 @@ class ParallelShell(object):
     def getResult(self, job): return self.pcmds[job].getResult()
     
     def getAllResults(self):
-        ret = ""
-        for c in self.pcmds:
-            ret += "Job: %s\nResult: %s\n" % (c, c.getResult())
-        return ret
+        return "".join(
+            "Job: %s\nResult: %s\n" % (c, c.getResult()) for c in self.pcmds
+        )
     
     def getReturnCodes(self):
         ret = []

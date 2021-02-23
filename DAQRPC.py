@@ -37,10 +37,9 @@ class RPCClient(xmlrpclib.ServerProxy):
     def showStats(self):
         "Return string representation of accumulated statistics"
         if self.nCalls() == 0: return "None"
-        r = ""
-        for x in self.callList():
-            r += "%25s: %s\n" % (x, self.statDict[x].report())
-        return r
+        return "".join(
+            "%25s: %s\n" % (x, self.statDict[x].report()) for x in self.callList()
+        )
 
     def nCalls(self):
         "Return number of invocations of RPC method"
@@ -113,9 +112,9 @@ class RPCStat(object):
     def tally(self, tdel):
         secs = tdel.seconds + tdel.microseconds * 1.E-6
         self.n += 1
-        if self.min == None or self.min > secs:
+        if self.min is None or self.min > secs:
             self.min = secs
-        if self.max == None or self.max < secs:
+        if self.max is None or self.max < secs:
             self.max = secs
         self.sum += secs
         self.sumsq += secs*secs
@@ -134,7 +133,7 @@ class RPCStat(object):
     
     def report(self):
         l = self.summaries()
-        if l == None: return "No entries."
+        if l is None: return "No entries."
         (n, Xmin, Xmax, avg, rms) = l
         return "%d entries, min=%.4f max=%.4f, avg=%.4f, rms=%.4f" % (self.n,
                                                                       self.min,
