@@ -161,13 +161,12 @@ def getLatestFileTime(dir):
         stat_dat = stat("%s/%s" % (dir, f))
         mtim = stat_dat[8]
         if mtim > latest or latest == None: latest = mtim
-    if latest == None: return None
+    if latest is None: return None
     return datetime.datetime.fromtimestamp(latest)
 
 def touchDoneFile(outputDir):
-    x=open(outputDir+"/"+".done", "w")
-    print >>x, " "
-    x.close()
+    with open(outputDir+"/"+".done", "w") as x:
+        print >>x, " "
 
 def getDoneFileTime(outputDir):
     f = outputDir+"/.done"
@@ -186,15 +185,15 @@ def eventsRepr(nEvents, cumEvents):
     return evStr
 
 def getStatusColor(status, nEvents, cumEvents):
-    # Calculate status color
-    yellow  = "F0E68C"
-    red     = "FF3300"
     magenta = "FF9999"
     green   = "CCFFCC"
-    
+
     statusColor = "EFEFEF"
     if status == "FAIL":
+        red     = "FF3300"
         statusColor = red
+        # Calculate status color
+        yellow  = "F0E68C"
         if type(nEvents).__name__ == "int" and nEvents > 0:
             statusColor = yellow
         if type(cumEvents).__name__ == "int" and cumEvents > 0:
@@ -232,19 +231,18 @@ def dashTime(dateStr):
 
 def generateSnippet(snippetFile, runNum, release, starttime, stoptime, dtsec,
                     rateStr, configName, runDir, status, nEvents, cumEvents):
-    snippet = open(snippetFile, 'w')
-    
-    statusColor = getStatusColor(status, nEvents, cumEvents)
-    
-    evStr = eventsRepr(nEvents, cumEvents)
-    if release is None: release = ""
+    with open(snippetFile, 'w') as snippet:
+        statusColor = getStatusColor(status, nEvents, cumEvents)
 
-    startday  = yyyymmdd(starttime)
-    starttime = hhmmss(starttime)
-    stopday   = yyyymmdd(stoptime)
-    stoptime  = hhmmss(stoptime)
+        evStr = eventsRepr(nEvents, cumEvents)
+        if release is None: release = ""
 
-    print >>snippet, """
+        startday  = yyyymmdd(starttime)
+        starttime = hhmmss(starttime)
+        stopday   = yyyymmdd(stoptime)
+        stoptime  = hhmmss(stoptime)
+
+        print >>snippet, """
     <tr>
     <td align=center>                 <div class="run"    >%d</div></td>
     <td align=center bgcolor="eeeeee"><div class="release">%s</div></td>
@@ -257,9 +255,8 @@ def generateSnippet(snippetFile, runNum, release, starttime, stoptime, dtsec,
     <td align=left>                   <div class="config" >%s</div></td>
     </tr>
     """ % (runNum, release, startday, starttime, stopday, stoptime,
-           fmt(dtsec), evStr, rateStr,
-           statusColor, runDir, status, configName)
-    snippet.close()
+               fmt(dtsec), evStr, rateStr,
+               statusColor, runDir, status, configName)
     return
 
 def makeTable(extractPath, files, name):
@@ -285,27 +282,26 @@ def makeTable(extractPath, files, name):
     return html
 
 def getDashEvent(dashFile, pat):
-    df = open(dashFile, "r")
-    ret = None
-    for l in df.readlines():
-        if search(pat, l):
-            match = search(r'^DAQRun \[(.+?)\]', l)
-            if match:
-                ret = match.group(1)
-                break
-    df.close()
+    with open(dashFile, "r") as df:
+        ret = None
+        for l in df.readlines():
+            if search(pat, l):
+                match = search(r'^DAQRun \[(.+?)\]', l)
+                if match:
+                    ret = match.group(1)
+                    break
     return ret
 
 def jan0(year):
     return datetime.datetime(year, 1, 1, 0, 0, 0)
 
 def dtSeconds(t0, t1):
-    if t0 == None or t1 == None: return None
+    if t0 is None or t1 is None: return None
     dt = t1-t0
     return dt.days*86400 + dt.seconds
 
 def toSeconds(t):
-    if t == None: return None
+    if t is None: return None
     return t.days*86400 + t.seconds
 
 def makeRunReport(snippetFile, dashFile, release, runInfo, configName,
@@ -369,16 +365,15 @@ def makeSummaryHtml(logLink, runNum, release, configName, status, nEvents, cumEv
     mons.sort()
     logs.sort()
 
-    html = open(logLink+"/run.html", "w")
+    with open(logLink+"/run.html", "w") as html:
+        if release is None: release = ""
 
-    if release is None: release = ""
+        eventStr = eventsRepr(nEvents, cumEvents)
 
-    eventStr = eventsRepr(nEvents, cumEvents)
-
-    print >>html, "<HEAD><TITLE>Run %d</TITLE></HEAD>" % runNum
-    print >>html, "<HTML>"
-    print >>html, "<TABLE><TR><TD BGCOLOR=EEEEEE VALIGN=TOP>"
-    print >>html, """
+        print >>html, "<HEAD><TITLE>Run %d</TITLE></HEAD>" % runNum
+        print >>html, "<HTML>"
+        print >>html, "<TABLE><TR><TD BGCOLOR=EEEEEE VALIGN=TOP>"
+        print >>html, """
 <TABLE>
  <TR><TD ALIGN="right"><FONT COLOR=888888>Run</FONT></TD><TD><FONT SIZE=+3>%d</FONT></TD></TR>
  <TR><TD ALIGN="right"><FONT COLOR=888888>pDAQ&nbsp;Release</FONT></TD><TD>%s</TD></TR>
@@ -394,22 +389,21 @@ def makeSummaryHtml(logLink, runNum, release, configName, status, nEvents, cumEv
  <TR><TD ALIGN="right"><FONT COLOR=888888>Status</FONT></TD><TD BGCOLOR=%s>%s</TD></TR>
 </TABLE>
      """ % (runNum, release, configName, fmt(starttime), fmt(stoptime), dtsec, eventStr,
-            getStatusColor(status, nEvents, cumEvents), status)
+                getStatusColor(status, nEvents, cumEvents), status)
 
-    print >>html, makeTable(logLink, logs, "Logs")
-    print >>html, makeTable(logLink, mons, "Monitoring")
-    
-    print >>html, "</TD><TD VALIGN=top>"
-        
-    dashlog = logLink+"/dash.log"
-    if exists(dashlog):
-        print >>html, "<PRE>"
-        print >>html, escapeBraces(open(dashlog).read())
-        print >>html, "</PRE>"
-        
-    print >>html, "</TD></TR></TABLE>"
-    print >>html, "</HTML>"
-    html.close()
+        print >>html, makeTable(logLink, logs, "Logs")
+        print >>html, makeTable(logLink, mons, "Monitoring")
+
+        print >>html, "</TD><TD VALIGN=top>"
+
+        dashlog = logLink+"/dash.log"
+        if exists(dashlog):
+            print >>html, "<PRE>"
+            print >>html, escapeBraces(open(dashlog).read())
+            print >>html, "</PRE>"
+
+        print >>html, "</TD></TR></TABLE>"
+        print >>html, "</HTML>"
 
 infoPat = r'(\d+)_(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)(\d\d)_(\d+)'
 
@@ -466,9 +460,8 @@ def recursiveGetTarFiles(dir):
     return ret
 
 def makePlaceHolderFile(shortName, dir, size):
-    x = open(dir+"/"+shortName, "w")
-    print >>x, "(FILE TOO LARGE (%s bytes), NOT EXTRACTED)" % size
-    x.close()
+    with open(dir+"/"+shortName, "w") as x:
+        print >>x, "(FILE TOO LARGE (%s bytes), NOT EXTRACTED)" % size
     
 def daysOf(f):
     t = getFileTime(f)
@@ -485,7 +478,7 @@ def createTopHTML(runDir, liveTime24hr=None, liveTime7days=None, refresh=15):
     if exists(bodyFile): bodyHTML = "<BODY background='%s'>" % bodyFile
     if exists(logoFile): logoHTML = "<IMG SRC='%s'>" % logoFile
 
-        
+
     if search(r'daq-reports/spts64', runDir):
         refreshHTML = ""
         title = "SPTS64 Run Summaries"
@@ -522,8 +515,9 @@ a lower limit.  Times are based on best guess start and end times for the pDAQ r
 """ % (liveTime24hr, liveTime7days)
     else:
         lt = ""
-        
-    top = """
+
+    return (
+        """
     <head>
     <title>%s</title>
     %s
@@ -557,8 +551,9 @@ a lower limit.  Times are based on best guess start and end times for the pDAQ r
      <td align=center><b><font size=-1>Status</font></b></td>
      <td align=left><b><font size=-1>Config</font></b></td>
     </tr>
-    """ % (title, refreshHTML, bodyHTML, logoHTML, lt, refreshNotice)
-    return top
+    """
+        % (title, refreshHTML, bodyHTML, logoHTML, lt, refreshNotice)
+    )
 
 def createBotHtml(isSubset=False):
     if isSubset:
@@ -603,10 +598,7 @@ def byDate(a, b):
     return 0
 
 def findall(pat, l):
-    ret = []
-    for item in l:
-        if search(pat, item): ret.append(item)
-    return ret
+    return [item for item in l if search(pat, item)]
 
 def getSortedRunReportDirs(outputDir):
     rundirs = findall(findpat, listdir(outputDir))

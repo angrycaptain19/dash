@@ -91,20 +91,17 @@ class BeanData(object):
         val = cmp(self.__remoteComp, other.__remoteComp)
         if val == 0:
             val = cmp(self.__bean, other.__bean)
-            if val == 0:
-                val = cmp(self.__field, other.__field)
-                if val == 0:
-                    val = cmp(self.__watchType, other.__watchType)
-                    if val == 0:
-                        val = cmp(self.__increasing, other.__increasing)
+        if val == 0:
+            val = cmp(self.__field, other.__field)
+        if val == 0:
+            val = cmp(self.__watchType, other.__watchType)
+        if val == 0:
+            val = cmp(self.__increasing, other.__increasing)
 
         return val
 
     def __str__(self):
-        if self.__increasing:
-            dir = '^'
-        else:
-            dir = 'v'
+        dir = '^' if self.__increasing else 'v'
         return '%s.%s.%s<%s>%s%s' % \
             (self.__remoteComp, self.__bean, self.__field, self.__watchType,
              str(self.__value), dir)
@@ -161,8 +158,7 @@ class CachedData(object):
         return self.__data[key]
 
     def __iter__(self):
-        for k in self.__data:
-            yield k
+        yield from self.__data
 
     def __len__(self):
         return len(self.__data)
@@ -331,14 +327,8 @@ class MostlyCnCServer(CnCServer):
     def __init__(self, logPort, livePort):
         self.__liveOnly = logPort is None and livePort is not None
 
-        if logPort is None:
-            logIP = None
-        else:
-            logIP = 'localhost'
-        if livePort is None:
-            liveIP = None
-        else:
-            liveIP = 'localhost'
+        logIP = None if logPort is None else 'localhost'
+        liveIP = None if livePort is None else 'localhost'
         super(MostlyCnCServer, self).__init__(name=MostlyCnCServer.SERVER_NAME,
                                               logIP=logIP, logPort=logPort,
                                               liveIP=liveIP, livePort=livePort,
@@ -459,10 +449,7 @@ class RealComponent(object):
         if self.__mbeanData is None:
             self.__mbeanData = BeanData.buildDAQBeans(self.__name)
 
-        attrs = {}
-        for f in fldList:
-            attrs[f] = self.__mbeanData[bean][f].getValue()
-        return attrs
+        return {f: self.__mbeanData[bean][f].getValue() for f in fldList}
 
     def __getMBeanValue(self, bean, fld):
         if self.__mbeanData is None:
@@ -661,7 +648,7 @@ class StubbedDAQRun(DAQRun):
         try:
             sys.argv = ['foo']
 
-            for k in stdArgs.keys():
+            for k in stdArgs:
                 if extraArgs is None or not extraArgs.has_key(k):
                     sys.argv.append(k)
                     if len(stdArgs[k]) > 0:
@@ -701,7 +688,7 @@ class StubbedDAQRun(DAQRun):
         if cls.LOGDICT.has_key(name):
             return cls.LOGDICT[name]
 
-        isServer = (name == 'catchall' or name == 'cncserver')
+        isServer = name in ['catchall', 'cncserver']
 
         expStartMsg = True
         log = cls.LOGFACTORY.createLog(name, logPort, expStartMsg)
@@ -835,7 +822,7 @@ class MostlyLive(DAQLive):
         try:
             sys.argv = ['foo']
 
-            for k in stdArgs.keys():
+            for k in stdArgs:
                 if extraArgs is None or not extraArgs.has_key(k):
                     sys.argv.append(k)
                     if len(stdArgs[k]) > 0:
@@ -874,10 +861,7 @@ class MoniLogTarget(object):
             fStr += '|LogToFile'
         if self.__flags & MoniLogTarget.LOG_TO_LIVE:
             fStr += '|LogToLive'
-        if len(fStr) == 0:
-            fStr = 'None'
-        else:
-            fStr = fStr[1:]
+        fStr = 'None' if len(fStr) == 0 else fStr[1:]
         return fStr
 
     def anyToFile(self):
@@ -1030,10 +1014,7 @@ class IntegrationTest(unittest.TestCase):
 
         self.__createComponents()
 
-        if liveRunOnly:
-            paraLivePort = None
-        else:
-            paraLivePort = livePort
+        paraLivePort = None if liveRunOnly else livePort
         pShell = \
             self.__createParallelShell(logPort, paraLivePort)
 
@@ -1428,14 +1409,13 @@ class IntegrationTest(unittest.TestCase):
         if appender and not liveRunOnly: appender.addExpectedExact(msg)
         if liveLog: liveLog.addExpectedText(msg)
 
-        if RUNLOG_INFO:
-            if targetFlags.moniToFile():
-                msg = ('Queueing data for SPADE (spadeDir=%s, logDir=%s,' +
-                       ' runNum=%s)...') % \
-                       (IntegrationTest.SPADE_DIR, IntegrationTest.LOG_DIR,
-                        runNum)
-                if appender and not liveRunOnly: appender.addExpectedExact(msg)
-                if liveLog: liveLog.addExpectedText(msg)
+        if RUNLOG_INFO and targetFlags.moniToFile():
+            msg = ('Queueing data for SPADE (spadeDir=%s, logDir=%s,' +
+                   ' runNum=%s)...') % \
+                   (IntegrationTest.SPADE_DIR, IntegrationTest.LOG_DIR,
+                    runNum)
+            if appender and not liveRunOnly: appender.addExpectedExact(msg)
+            if liveLog: liveLog.addExpectedText(msg)
 
         msg = "Doing complete rip-down and restart of pDAQ" + \
             " (everything but DAQRun)"

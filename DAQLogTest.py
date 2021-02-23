@@ -19,11 +19,8 @@ class TestDAQLog(unittest.TestCase):
                               'Expected "%s", not "%s"' % (msgList[i], msg))
 
     def readLog(self, logPath):
-        lines = []
-        fd = open(logPath, 'r')
-        for line in fd:
-            lines.append(line.rstrip())
-        fd.close()
+        with open(logPath, 'r') as fd:
+            lines = [line.rstrip() for line in fd]
         return lines
 
     def setUp(self):
@@ -53,7 +50,7 @@ class TestDAQLog(unittest.TestCase):
 
         self.sockLog = LogSocketServer(port, cname, logPath, True)
         self.sockLog.startServing()
-        for i in range(5):
+        for _ in range(5):
             if self.sockLog.isServing():
                 break
             time.sleep(0.1)

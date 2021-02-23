@@ -85,11 +85,7 @@ class RealComponent(object):
         if self.__logger is None:
             raise Exception('No logging for %s#%d' % (self.__name, self.__num))
 
-        if cfgName is None:
-            cfgStr = ''
-        else:
-            cfgStr = ' with %s' % cfgName
-
+        cfgStr = '' if cfgName is None else ' with %s' % cfgName
         self.__logger.write('Config %s#%d%s' %
                             (self.__name, self.__num, cfgStr))
 

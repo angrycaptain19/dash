@@ -122,11 +122,7 @@ class Component(object):
 
     def __str__(self):
         if self.fullStr is None:
-            if self.num == 0:
-                self.fullStr = self.name
-            else:
-                self.fullStr = "%s-%d" % (self.name, self.num)
-
+            self.fullStr = self.name if self.num == 0 else "%s-%d" % (self.name, self.num)
         return self.fullStr
 
 def computeRates(dataDict):
@@ -149,14 +145,11 @@ def computeRates(dataDict):
 
         prevTime = k
 
-    if len(rates) == 0:
+    if not rates:
         rates = None
         totRate = None
     elif len(rates) == 1:
-        if float(rates[0]) == 0.0:
-            totRate = None
-        else:
-            totRate = rates[0]
+        totRate = None if float(rates[0]) == 0.0 else rates[0]
         rates = None
     else:
         totSecs = prevTime - firstTime
@@ -221,11 +214,7 @@ def processDir(dirName):
 
 def processFile(fileName, comp):
     """Process the specified file"""
-    if not COMP_FIELDS.has_key(comp.name):
-        flds = None
-    else:
-        flds = COMP_FIELDS[comp.name]
-
+    flds = None if not COMP_FIELDS.has_key(comp.name) else COMP_FIELDS[comp.name]
     data = {}
 
     secName = None

@@ -30,10 +30,7 @@ class TestCnCMisc(unittest.TestCase):
 
         for isInput in (False, True):
             conn = Connector(typeStr, isInput, port)
-            if isInput:
-                expStr = '%d=>%s' % (port, typeStr)
-            else:
-                expStr = '%s=>' % typeStr
+            expStr = '%d=>%s' % (port, typeStr) if isInput else '%s=>' % typeStr
             self.assertEquals(expStr, str(conn),
                               'Expected "%s", not "%s"' % (expStr, str(conn)))
 

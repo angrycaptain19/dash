@@ -63,10 +63,7 @@ class MockMBeanClient(object):
         return self.__mbeanDict[bean][fld].getValue()
 
     def getAttributes(self, bean, fldList):
-        attrs = {}
-        for f in fldList:
-            attrs[f] = self.__mbeanDict[bean][f].getValue()
-        return attrs
+        return {f: self.__mbeanDict[bean][f].getValue() for f in fldList}
 
     def listGetters(self, bean):
         k = self.__mbeanDict[bean].keys()
@@ -220,11 +217,7 @@ class TestRunWatchdog(unittest.TestCase):
 
         tw = ThresholdWatcher(comp, bean, fld, thresh, lessThan)
 
-        if lessThan:
-            descr = 'below'
-        else:
-            descr = 'above'
-
+        descr = 'below' if lessThan else 'above'
         expStr = '%s %s.%s %s %s' % (comp, bean, fld, descr, str(thresh))
         actStr = str(tw)
         self.assertEquals(expStr, actStr,
@@ -283,12 +276,12 @@ class TestRunWatchdog(unittest.TestCase):
             if l:
                 vFalse = thresh - 1
                 vTrue = thresh + 1
+                if l: dir = 'less than'
             else:
                 vFalse = thresh + 1
                 vTrue = thresh - 1
 
-            if l: dir = 'less than'
-            else: dir = 'greater than'
+                dir = 'greater than'
             self.failIf(tw.check(vFalse),
                             'Check(%d) <%s> should be False' % (vFalse, dir))
             self.failUnless(tw.check(thresh),
@@ -906,11 +899,10 @@ class TestRunWatchdog(unittest.TestCase):
         portDict = {}
         dataDict = {}
 
-        nextId = 1
-        for comp in ('stringHub#0', 'stringHub#10', 'inIceTrigger#0',
+        for nextId, comp in enumerate(('stringHub#0', 'stringHub#10', 'inIceTrigger#0',
                      'simpleTrigger#0', 'iceTopTrigger#0', 'amandaTrigger#0',
                      'globalTrigger#0', 'eventBuilder#0',
-                     'secondaryBuilders#0'):
+                     'secondaryBuilders#0'), start=1):
             pound = comp.find('#')
             compName = comp[:pound]
             compId = int(comp[pound+1:])
@@ -922,8 +914,6 @@ class TestRunWatchdog(unittest.TestCase):
             client = MockRPCClient(mbeans)
 
             id = nextId
-            nextId += 1
-
             idList.append(id)
             compNameDict[id] = compName
             compIdDict[id] = compId
@@ -944,8 +934,8 @@ class TestRunWatchdog(unittest.TestCase):
 
         self.__runThread(wd, appender)
 
-        for id in dataDict:
-            dataDict[id].updateMBeanData()
+        for id, value in dataDict.items():
+            value.updateMBeanData()
 
         appender.addExpectedRegexp(r'\*\* Run watchdog reports stagnant' +
                                    r' components:.*')
@@ -960,11 +950,10 @@ class TestRunWatchdog(unittest.TestCase):
         portDict = {}
         dataDict = {}
 
-        nextId = 1
-        for comp in ('stringHub#0', 'stringHub#10', 'inIceTrigger#0',
+        for nextId, comp in enumerate(('stringHub#0', 'stringHub#10', 'inIceTrigger#0',
                      'simpleTrigger#0', 'iceTopTrigger#0', 'amandaTrigger#0',
                      'globalTrigger#0', 'eventBuilder#0',
-                     'secondaryBuilders#0'):
+                     'secondaryBuilders#0'), start=1):
             pound = comp.find('#')
             compName = comp[:pound]
             compId = int(comp[pound+1:])
@@ -974,8 +963,6 @@ class TestRunWatchdog(unittest.TestCase):
             client = MockRPCClient(mbeans)
 
             id = nextId
-            nextId += 1
-
             idList.append(id)
             compNameDict[id] = compName
             compIdDict[id] = compId
@@ -994,9 +981,9 @@ class TestRunWatchdog(unittest.TestCase):
         self.failIf(wd.caughtError(), 'Watchdog should not have error')
         appender.checkStatus(10)
 
-        for n in range(2):
-            for id in dataDict:
-                dataDict[id].updateMBeanData()
+        for _ in range(2):
+            for id, value in dataDict.items():
+                value.updateMBeanData()
             self.__runThread(wd, appender)
 
 if __name__ == '__main__':

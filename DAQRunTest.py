@@ -132,13 +132,8 @@ class MockCnCRPC(object):
         if self.compList is None:
             raise Exception('List of components has not been set')
 
-        showList = []
-
-        for c in self.compList:
-            showList.append('ID#%d %s#%d at %s:%d' %
-                            (c[0], c[1], c[2], c[3], c[4]))
-
-        return showList
+        return ['ID#%d %s#%d at %s:%d' %
+                            (c[0], c[1], c[2], c[3], c[4]) for c in self.compList]
 
     def getRunsetLoggers(self):
         return self.runsetLoggers
@@ -226,7 +221,7 @@ class MostlyDAQRun(DAQRun):
         try:
             sys.argv = ['foo']
 
-            for k in stdArgs.keys():
+            for k in stdArgs:
                 if extraArgs is None or not extraArgs.has_key(k):
                     sys.argv.append(k)
                     if len(stdArgs[k]) > 0:
@@ -529,7 +524,7 @@ class TestDAQRun(unittest.TestCase):
             self.assertEqual(len(l[1]), len(t),
                              'Expected %d-element tuple, but got %d elements' %
                              (len(l[1]), len(t)))
-            for n in range(0, len(t)):
+            for n in range(len(t)):
                 self.assertEquals(l[1][n], t[n],
                                   'Expected element#%d to be "%s", not "%s"' %
                                   (n, str(l[1][n]), str(t[n])))
@@ -552,7 +547,7 @@ class TestDAQRun(unittest.TestCase):
         self.assertEqual(len(vals), len(nlst),
                          'Expected %d-element list, but got %d elements' %
                          (len(vals), len(nlst)))
-        for n in range(0, len(nlst)):
+        for n in range(len(nlst)):
             self.assertEquals(vals[n], nlst[n],
                               'Expected element#%d to be "%s", not "%s"' %
                               (n, str(vals[n]), str(nlst[n])))
@@ -563,7 +558,7 @@ class TestDAQRun(unittest.TestCase):
         tooFew = []
         missing = None
         for r in required:
-            if len(tooFew) == 0 or missing is not None:
+            if not tooFew or missing is not None:
                 tooFew.append(r)
             else:
                 missing = r
@@ -574,16 +569,11 @@ class TestDAQRun(unittest.TestCase):
         self.assertEquals(missing, waitList[0], "Expected '%s' not '%s'" %
                           (missing, waitList[0]))
 
-        justRight = []
-        for r in required:
-            justRight.append(r)
-
+        justRight = [r for r in required]
         waitList = DAQRun.findMissing(required, justRight)
         self.assertEquals(0, len(waitList), "Did not expect %s" % str(waitList))
 
-        tooMany = []
-        for r in required:
-            tooMany.append(r)
+        tooMany = [r for r in required]
         tooMany.append('jkl#9')
 
         waitList = DAQRun.findMissing(required, tooMany)
@@ -651,11 +641,7 @@ class TestDAQRun(unittest.TestCase):
 
         expId = cnc.nextRunsetId
 
-        required = []
-        for c in comps:
-            required.append('%s#%d' % (c[1], c[2]))
-
-
+        required = ['%s#%d' % (c[1], c[2]) for c in comps]
         logger.addExpectedExact(('Starting run %d (waiting for required %d' +
                                  ' components to register w/ CnCServer)') %
                                 (dr.runStats.runNum, len(required)))
@@ -684,7 +670,7 @@ class TestDAQRun(unittest.TestCase):
 
         dr.fill_component_dictionaries(cnc)
 
-        for i in range(0, len(expComps)):
+        for i in range(len(expComps)):
             key = dr.setCompIDs[i]
             self.assertEquals(expComps[i][0], key,
                               'Expected comp#%d to be %s, not %s' %
@@ -872,7 +858,7 @@ class TestDAQRun(unittest.TestCase):
         self.assertEquals(len(expCnts), len(cnts),
                           'Expected %d event counts, not %d' %
                           (len(expCnts), len(cnts)))
-        for i in range(0, len(expCnts)):
+        for i in range(len(expCnts)):
             self.assertEquals(expCnts[i], cnts[i],
                               'Expected event count #%d to be %d, not %d' %
                               (i, expCnts[i], cnts[i]))
@@ -923,7 +909,7 @@ class TestDAQRun(unittest.TestCase):
         dt = datetime.datetime.now()
 
         maxRate = 300
-        for i in range(0, maxRate):
+        for i in range(maxRate):
             secs = maxRate - i
             evts = (maxRate - i) * 2
             dr.runStats.physicsRate.add(dt - datetime.timedelta(seconds=secs),
@@ -1203,8 +1189,8 @@ class TestDAQRun(unittest.TestCase):
                                len(expComps))
 
         nextPort = DAQPort.RUNCOMP_BASE
-        for i in range(0, len(expComps)):
-            c = expComps[i]
+        for expComp in expComps:
+            c = expComp
 
             logger.addExpectedExact('%s(%d %s:%d) -> %s:%d' %
                                    (c[1], c[0], c[3], c[4], dr.ip, nextPort))
@@ -1231,7 +1217,7 @@ class TestDAQRun(unittest.TestCase):
                           (len(expComps), len(logList)))
 
         nextPort = DAQPort.RUNCOMP_BASE
-        for i in range(0, len(expComps)):
+        for i in range(len(expComps)):
             c = expComps[i]
             l = logList[i]
 

@@ -26,7 +26,7 @@ class MockLive(DAQLive):
         try:
             sys.argv = ['foo']
 
-            for k in stdArgs.keys():
+            for k in stdArgs:
                 if extraArgs is None or not extraArgs.has_key(k):
                     sys.argv.append(k)
                     if len(stdArgs[k]) > 0:

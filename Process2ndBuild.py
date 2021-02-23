@@ -17,8 +17,7 @@ def checkForRunningProcesses(progname):
 
 def isTargetFile(f):
     match = search(r'\w+_\d+_\d+_\d+_\d+\.dat', f)
-    if match: return True
-    return False
+    return bool(match)
 
 def main():
     MAX_FILES_PER_TARBALL = 50

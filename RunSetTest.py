@@ -14,11 +14,7 @@ class TestRunSet(unittest.TestCase):
             self.assertEqual(statDict[c], expState)
 
     def isCompListConfigured(self, compList):
-        for c in compList:
-            if not c.isConfigured():
-                return False
-
-        return True
+        return all(c.isConfigured() for c in compList)
         
     def isCompListRunning(self, compList, runNum=-1):
         for c in compList:
@@ -32,19 +28,14 @@ class TestRunSet(unittest.TestCase):
     def runTests(self, compList, runNum):
         logger = MockLogger('foo#0')
 
-        num = 1
-        for c in compList:
+        for num, c in enumerate(compList, start=1):
             c.setOrder(num)
-            num += 1
-
         runset = RunSet(compList, logger)
         self.assertEqual(str(runset), 'RunSet #' + str(runset.id))
 
         self.checkStatus(runset, compList, 'idle')
 
-        logList = []
-        for c in compList:
-            logList.append([c.name, c.num, 666, 'info'])
+        logList = [[c.name, c.num, 666, 'info'] for c in compList]
         runset.configureLogging('localhost', logList)
 
         if len(compList) > 0:
@@ -126,8 +117,7 @@ class TestRunSet(unittest.TestCase):
         self.runTests([], 1)
 
     def testSet(self):
-        compList = []
-        compList.append(MockComponent('foo', 1))
+        compList = [MockComponent('foo', 1)]
         compList.append(MockComponent('bar', 2))
         compList[0].setConfigureWait(2)
 

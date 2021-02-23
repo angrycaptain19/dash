@@ -87,10 +87,7 @@ class LiveArgs(object):
 class LiveLog(object):
     def __init__(self, liveComp, verbose):
         self.__liveComp = liveComp
-        if verbose:
-            self.__level = LOG_DEBUG
-        else:
-            self.__level = LOG_ERROR
+        self.__level = LOG_DEBUG if verbose else LOG_ERROR
 
     def __send(self, level, msg):
         if self.__liveComp.moniClient:
@@ -203,26 +200,22 @@ class DAQLive(Component):
 
         # attempt to read a run number from the file
         try:
-            f = open(self.__runNumFile, "r")
-            rStr = f.readline()
-            f.close()
+            with open(self.__runNumFile, "r") as f:
+                rStr = f.readline()
             runNum = int(rStr.rstrip("\r\n")) + 1
         except:
             runNum = None
 
         # if we've gotten a run number, update the file
         if runNum is not None:
-            fd = open(self.__runNumFile, "w")
-            print >>fd, str(runNum)
-            fd.close()
-
+            with open(self.__runNumFile, "w") as fd:
+                print >>fd, str(runNum)
         return runNum
 
     def __getState(self, retry=True):
         "Get the current pDAQ state"
-        if self.__runIface is None:
-            if not self.__connectToDAQRun():
-                return None
+        if self.__runIface is None and not self.__connectToDAQRun():
+            return None
 
         try:
             state = self.__runIface.getState()
@@ -240,9 +233,8 @@ class DAQLive(Component):
         if self.moniClient is None:
             return
 
-        if self.__runIface is None:
-            if not self.__connectToDAQRun():
-                return
+        if self.__runIface is None and not self.__connectToDAQRun():
+            return
 
         moniData = self.__runIface.monitorRun()
         for k in moniData.keys():
@@ -285,8 +277,8 @@ class DAQLive(Component):
     def checkID(self):
         if self.__runIface is None:
             self.__connectToDAQRun()
-            if self.__runIface is None:
-                return False
+        if self.__runIface is None:
+            return False
 
         try:
             ok = self.__runIface.checkID()
@@ -304,9 +296,8 @@ class DAQLive(Component):
 
     def recovering(self, retry=True):
         "Try to recover (from an error state?)"
-        if self.__runIface is None:
-            if not self.__connectToDAQRun():
-                return
+        if self.__runIface is None and not self.__connectToDAQRun():
+            return
 
         try:
             self.__runIface.recover()
@@ -326,9 +317,8 @@ class DAQLive(Component):
 
     def release(self, retry=True):
         "This is only for debugging -- will never be called by I3Live"
-        if self.__runIface is None:
-            if not self.__connectToDAQRun():
-                return
+        if self.__runIface is None and not self.__connectToDAQRun():
+            return
 
         try:
             self.__runIface.release()
@@ -358,10 +348,9 @@ class DAQLive(Component):
                              (state, str(self.__runState)))
             self.__runState = state
 
-        if self.__runState == "RUNNING":
-            if self.__moniTimer.isTime():
-                self.__moniTimer.reset()
-                self.__reportMoni()
+        if self.__runState == "RUNNING" and self.__moniTimer.isTime():
+            self.__moniTimer.reset()
+            self.__reportMoni()
 
     def starting(self, stateArgs=None, retry=True):
         """
@@ -449,14 +438,10 @@ class DAQLive(Component):
         """
         Start new subrun, basically a passthru to give <domList> to DAQRunIface.
         """
-        if self.__runIface is None:
-            if not self.__connectToDAQRun():
-                return
+        if self.__runIface is None and not self.__connectToDAQRun():
+            return
 
-        if len(domList) > 0:
-            action = 'Starting'
-        else:
-            action = 'Stopping'
+        action = 'Starting' if len(domList) > 0 else 'Stopping'
         self.__log.info('%s subrun %d.%d' %
                         (action, self.__runNumber, subrunId))
 

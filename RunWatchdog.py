@@ -23,10 +23,7 @@ class ThresholdWatcher(object):
         self.__threshold = threshold
         self.__lessThan = lessThan
 
-        if self.__lessThan:
-            self.opDescription = 'below'
-        else:
-            self.opDescription = 'above'
+        self.opDescription = 'below' if self.__lessThan else 'above'
 
     def __str__(self):
         return '%s %s.%s %s %s' % \
@@ -78,10 +75,7 @@ class ValueWatcher(object):
 
     def check(self, newValue):
         if self.__prevValue is None:
-            if type(newValue) == list:
-                self.__prevValue = newValue[:]
-            else:
-                self.__prevValue = newValue
+            self.__prevValue = newValue[:] if type(newValue) == list else newValue
         elif type(newValue) != type(self.__prevValue):
             raise Exception('Previous value for %s was %s, new value is %s' %
                             (str(self), str(type(self.__prevValue)),
@@ -99,7 +93,7 @@ class ValueWatcher(object):
                             (str(self), len(self.__prevValue), len(newValue)))
         else:
             tmpStag = False
-            for i in range(0, len(newValue)):
+            for i in range(len(newValue)):
                 if self.__compare(self.__prevValue[i], newValue[i]):
                     tmpStag = True
                 else:
@@ -146,18 +140,15 @@ class WatchData(object):
             if not watchList[0].check(val):
                 unhealthy.append(watchList[0].unhealthyString(val))
         else:
-            fldList = []
-            for f in watchList:
-                fldList.append(f.fieldName)
-
+            fldList = [f.fieldName for f in watchList]
             valMap = self.__client.mbean.getAttributes(watchList[0].beanName,
                                                        fldList)
-            for i in range(0, len(fldList)):
+            for i in range(len(fldList)):
                 val = valMap[fldList[i]]
                 if not watchList[i].check(val):
                     unhealthy.append(watchList[i].unhealthyString(val))
 
-        if len(unhealthy) == 0:
+        if not unhealthy:
             return None
 
         return unhealthy
@@ -223,7 +214,7 @@ class WatchData(object):
             if badList is not None:
                 unhealthy += badList
 
-        if len(unhealthy) == 0:
+        if not unhealthy:
             return None
 
         return unhealthy
@@ -285,8 +276,7 @@ class RunWatchdog(IntervalTimer):
                 try:
                     cw = self.createData(c, shortNameOf[c], daqIDof[c],
                                          rpcAddrOf[c], mbeanPortOf[c])
-                    if shortNameOf[c] == 'stringHub' or \
-                            shortNameOf[c] == 'replayHub':
+                    if shortNameOf[c] in ['stringHub', 'replayHub']:
                         cw.addInputValue('dom', 'sender', 'NumHitsReceived')
                         if self.__contains(shortNameOf, 'eventBuilder'):
                             cw.addInputValue('eventBuilder', 'sender',
@@ -418,25 +408,21 @@ class RunWatchdog(IntervalTimer):
             except Exception:
                 self.__log.error(str(comp) + ' outputs: ' + exc_string())
 
-            if not isProblem:
-                try:
-                    badList = comp.checkList(comp.thresholdFields)
-                    if badList is not None:
-                        threshold += badList
-                        isProblem = True
-                except Exception:
-                    self.__log.error(str(comp) + ' thresholds: ' + exc_string())
+        if not isProblem:
+            try:
+                badList = comp.checkList(comp.thresholdFields)
+                if badList is not None:
+                    threshold += badList
+                    isProblem = True
+            except Exception:
+                self.__log.error(str(comp) + ' thresholds: ' + exc_string())
 
     def __contains(self, nameDict, compName):
-        for n in nameDict.values():
-            if n == compName:
-                return True
-
-        return False
+        return compName in nameDict.values()
 
     def __findHub(self, nameDict):
         for n in nameDict.values():
-            if n == 'stringHub' or n == 'replayHub':
+            if n in ['stringHub', 'replayHub']:
                 return n
 
         return None
@@ -506,15 +492,15 @@ class RunWatchdog(IntervalTimer):
 
         errMsg = None
 
-        if len(stagnant) > 0:
+        if stagnant:
             errMsg = RunWatchdog.__appendError(errMsg, 'stagnant',
                                                self.__joinAll(stagnant))
 
-        if len(starved) > 0:
+        if starved:
             errMsg = RunWatchdog.__appendError(errMsg, 'starving',
                                                self.__joinAll(starved))
 
-        if len(threshold) > 0:
+        if threshold:
             errMsg = RunWatchdog.__appendError(errMsg, 'threshold',
                                                self.__joinAll(threshold))
 

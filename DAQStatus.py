@@ -25,8 +25,8 @@ def cmpComp(x, y):
     c = cmp(x[6], y[6])
     if c == 0:
         c = cmp(x[1], y[1])
-        if c == 0:
-            c = cmp(x[2], y[2])
+    if c == 0:
+        c = cmp(x[2], y[2])
 
     return c
 

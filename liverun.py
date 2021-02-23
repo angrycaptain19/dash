@@ -243,12 +243,7 @@ class FlasherThread(threading.Thread):
         self.__running = False
 
     def computeRunDuration(cls, times, pauseSecs):
-        tot = 0
-
-        for tm in times:
-            tot += tm + pauseSecs + 5
-
-        return tot
+        return sum(tm + pauseSecs + 5 for tm in times)
     computeRunDuration = classmethod(computeRunDuration)
 
     def run(self):
@@ -375,9 +370,8 @@ class LiveRun(object):
         "Get the current pDAQ cluster configuration"
         clusterFile = os.path.join(os.environ["HOME"], ".active")
         try:
-            f = open(clusterFile, "r")
-            ret = f.readline()
-            f.close()
+            with open(clusterFile, "r") as f:
+                ret = f.readline()
             return ret.rstrip('\r\n')
         except:
             return None
@@ -419,16 +413,11 @@ class LiveRun(object):
 
     def __setLightMode(self, isLID):
         "Set the I3Live LID mode"
-        if isLID:
-            expMode = LightMode.LID
-        else:
-            expMode = LightMode.DARK
-
+        expMode = LightMode.LID if isLID else LightMode.DARK
         if self.__state.lightMode() == expMode:
             return True
 
-        if self.__state.lightMode() == LightMode.LID or \
-                self.__state.lightMode() == LightMode.DARK:
+        if self.__state.lightMode() in [LightMode.LID, LightMode.DARK]:
             # mode isn't in transition, so start transitioning
             #
             cmd = "%s lightmode %s" % (self.__liveCmdProg, expMode)
@@ -438,7 +427,7 @@ class LiveRun(object):
         waitSecs = 10
         numTries = 10
 
-        for i in range(numTries):
+        for _ in range(numTries):
             self.__state.check()
             if self.__state.lightMode() == expMode:
                 break
@@ -520,9 +509,11 @@ class LiveRun(object):
                             ("WARNING: Expected %d second run, but run ended" +
                              " after about %d seconds") % (duration, runTime)
 
-                    if self.__state.runState() == RunState.STOPPED or \
-                            self.__state.runState() == RunState.STOPPING or \
-                            self.__state.runState() == RunState.RECOVERING:
+                    if self.__state.runState() in [
+                        RunState.STOPPED,
+                        RunState.STOPPING,
+                        RunState.RECOVERING,
+                    ]:
                         break
 
                     print >>sys.stderr, "Unexpected run state %s" % \

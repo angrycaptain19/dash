@@ -292,9 +292,7 @@ class LogChecker(object):
 
     def __checkEmpty(self):
         if len(self.__expMsgs) != 0:
-            fixed = []
-            for m in self.__expMsgs:
-                fixed.append(str(m))
+            fixed = [str(m) for m in self.__expMsgs]
             raise Exception("Didn't receive %d expected %s log messages: %s" %
                             (len(fixed), self.__name, str(fixed)))
 
@@ -430,8 +428,8 @@ class MockComponent(object):
             extra.append('CFG')
         for conn in self.connectors:
             extra.append(str(conn))
-            
-        if len(extra) > 0:
+
+        if extra:
             outStr += '[' + ','.join(extra) + ']'
         return outStr
 
@@ -466,7 +464,7 @@ class MockComponent(object):
         if not self.__connected:
             return 'idle'
         if not self.__configured or self.__configWait > 0:
-            if self.__configured and self.__configWait > 0:
+            if self.__configured:
                 self.__configWait -= 1
             return 'connected'
         if not self.runNum:
@@ -626,7 +624,7 @@ class MockParallelShell(object):
         del self.__exp[found]
 
     def __isLocalhost(self, host):
-        return host == 'localhost' or host == '127.0.0.1'
+        return host in ['localhost', '127.0.0.1']
 
     def add(self, cmd):
         self.__checkCmd(cmd)
@@ -638,11 +636,7 @@ class MockParallelShell(object):
         ipAddr = GetIP.getIP(host)
         jarPath = os.path.join(MockParallelShell.BINDIR, launchData.getJar())
 
-        if verbose:
-            redir = ''
-        else:
-            redir = ' </dev/null >/dev/null 2>&1'
-
+        redir = '' if verbose else ' </dev/null >/dev/null 2>&1'
         cmd = 'java %s' % launchData.getJVMArgs()
 
         if eventCheck and compName == 'eventBuilder':
@@ -667,11 +661,7 @@ class MockParallelShell(object):
                               (host, cmd, redir))
 
     def addExpectedJavaKill(self, compName, killWith9, verbose, host):
-        if killWith9:
-            nineArg = '-9'
-        else:
-            nineArg = ''
-
+        nineArg = '-9' if killWith9 else ''
         user = os.environ['USER']
         jar = getLaunchData(compName).getJar()
 
@@ -704,10 +694,7 @@ class MockParallelShell(object):
             cmd += ' -s %s' % spadeDir
             cmd += ' -u %s' % cfgName
             if livePort is not None:
-                if logPort is not None:
-                    cmd += " -B"
-                else:
-                    cmd += " -L"
+                cmd += " -B" if logPort is not None else " -L"
             cmd += ' -a %s' % copyDir
             self.__exp.append(cmd)
 
@@ -722,11 +709,7 @@ class MockParallelShell(object):
 
     def addExpectedPythonKill(self, doLive, doDAQRun, doCnC, dashDir,
                               killWith9):
-        if killWith9:
-            nineArg = '-9 '
-        else:
-            nineArg = ''
-
+        nineArg = '-9 ' if killWith9 else ''
         user = os.environ['USER']
 
         if doLive:

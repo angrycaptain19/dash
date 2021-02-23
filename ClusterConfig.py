@@ -184,9 +184,8 @@ class ClusterConfig(deployConfig):
         "read the cached cluster name"
         clusterFile = self.getCachedNamePath(useActiveConfig)
         try:
-            f = open(clusterFile, "r")
-            ret = f.readline()
-            f.close()
+            with open(clusterFile, "r") as f:
+                ret = f.readline()
             return ret.rstrip('\r\n')
         except:
             return None
@@ -222,6 +221,5 @@ class ClusterConfig(deployConfig):
     def writeCacheFile(self, writeActiveConfig=False):
         "cache this config name"
         cachedNamePath = self.getCachedNamePath(writeActiveConfig)
-        fd = open(cachedNamePath, 'w')
-        print >>fd, self.configName
-        fd.close()
+        with open(cachedNamePath, 'w') as fd:
+            print >>fd, self.configName

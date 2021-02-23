@@ -38,15 +38,13 @@ def updateStatus(oldStatus, newStatus):
     return newStatus
 
 def setLastRunNum(runFile, runNum):
-    fd = open(runFile, 'w')
-    print >>fd, runNum
-    fd.close()
+    with open(runFile, 'w') as fd:
+        print >>fd, runNum
     
 def getLastRunNum(runFile):
     try:
-        f = open(runFile, "r")
-        ret = f.readline()
-        f.close()
+        with open(runFile, "r") as f:
+            ret = f.readline()
         return int(ret.rstrip('\r\n'))
     except:
         return None
@@ -178,10 +176,7 @@ class SubRunSet:
                 sr.addDOM(DOM(mbid, bright, window, delay, mask, rate))
                 
     def __str__(self):
-        s = ""
-        for l in self.subruns:
-            s += str(l)+"\n"
-        return s
+        return "".join(str(l)+"\n" for l in self.subruns)
 
     def next(self):
         try:
